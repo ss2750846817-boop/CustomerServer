@@ -105,7 +105,7 @@ func parseDay(ts string) string {
 
 // analyze 汇总所有维度统计
 func analyze(tickets []Ticket) *Report {
-	r := &Report{Summary: Summary{}, ByCategory: []CategoryStat{}, ByDay: []DayStat{}, Anomalies: []Anomaly{}, Keyword: []KeywordStat{}}
+	r := &Report{Summary: Summary{}, ByCategory: []CategoryStat{}, ByDay: []DayStat{}, Anomalies: []Anomaly{}}
 
 	// 基础概览
 	sort.Slice(tickets, func(i, j int) bool { return tickets[i].CreatedAt < tickets[j].CreatedAt })
@@ -239,25 +239,7 @@ func analyze(tickets []Ticket) *Report {
 		}
 	}
 
-	// 异常检测5：关键词反复出现（精确子串匹配，每个关键词统计"描述中包含该确切子串"的工单条数）
-	kwList := []string{"扣款", "支付", "退款", "退货运费", "物流", "重复", "机器人", "发货"}
-	kwMap := map[string]int{}
-	for _, kw := range kwList {
-		for _, t := range tickets {
-			if strings.Contains(t.Description, kw) {
-				kwMap[kw]++
-			}
-		}
-	}
-	for k, v := range kwMap {
-		if v >= 2 {
-			r.Keyword = append(r.Keyword, KeywordStat{Keyword: k, Count: v})
-		}
-	}
-	sort.Slice(r.Keyword, func(i, j int) bool { return r.Keyword[i].Count > r.Keyword[j].Count })
-
-	// 异常检测6：同一用户/同一问题反复出现（重复扣款关键词若在每日出现）
-	// 关联：分类 x 渠道
+	// 异常检测5：关联：分类 x 渠道
 	channelMap := map[string]int{}
 	for _, t := range tickets {
 		channelMap[t.Channel]++
@@ -305,18 +287,12 @@ type Anomaly struct {
 	Detail   string
 }
 
-type KeywordStat struct {
-	Keyword string
-	Count   int
-}
-
 type Report struct {
 	Summary               Summary
 	ByCategory            []CategoryStat
 	ByDay                 []DayStat
 	AvgPerDay             float64
 	Anomalies             []Anomaly
-	Keyword               []KeywordStat
 	ChannelDist           map[string]int
 	CategoryPriority      map[string]map[string]int
 	OverallTopCategory    string
@@ -388,15 +364,13 @@ func renderMarkdown(r *Report) string {
 		}
 	}
 
-	printSectionHeader(w, "七、反复出现的关键问题（关键词分析）")
-	if len(r.Keyword) == 0 {
-		fmt.Fprintf(w, "无明显高频关键词。\n")
-	} else {
-		fmt.Fprintf(w, "| 关键词 | 出现次数 |\n|---|---|\n")
-		for _, k := range r.Keyword {
-			fmt.Fprintf(w, "| %s | %d |\n", k.Keyword, k.Count)
-		}
+	printSectionHeader(w, "七、反复出现的高频问题类型（依据 category 字段）")
+	fmt.Fprintf(w, "按 `category` 字段统计各问题类型出现频次（即反复出现的关键问题）：\n\n")
+	fmt.Fprintf(w, "| 问题类型 (category) | 出现次数 | 占比 |\n|---|---|---|\n")
+	for _, c := range r.ByCategory {
+		fmt.Fprintf(w, "| %s | %d | %.1f%% |\n", c.Category, c.Count, pct(c.Count, r.Summary.Total))
 	}
+	fmt.Fprintf(w, "\n> 出现次数最多的问题类型为「%s」（%d 次），是主管最应优先关注的高频问题。\n", r.OverallTopCategory, r.ByCategory[0].Count)
 
 	w.Flush()
 	return sb.String()
@@ -452,10 +426,10 @@ func renderHTML(r *Report) string {
 		}
 		fmt.Fprintf(&anomRows, "<tr><td>%s</td><td style='color:%s;font-weight:bold'>%s</td><td>%s</td></tr>", a.Type, sev, a.Severity, a.Detail)
 	}
-	// 关键词
+	// 高频问题类型（依据 category 字段）
 	var kwRows strings.Builder
-	for _, k := range r.Keyword {
-		fmt.Fprintf(&kwRows, "<tr><td>%s</td><td>%d</td></tr>", k.Keyword, k.Count)
+	for _, c := range r.ByCategory {
+		fmt.Fprintf(&kwRows, "<tr><td>%s</td><td>%d</td><td>%.1f%%</td></tr>", c.Category, c.Count, pct(c.Count, r.Summary.Total))
 	}
 	// 分类表
 	var catRows strings.Builder
@@ -515,7 +489,7 @@ canvas{max-height:300px}
 <div class="grid">
 <div class="panel anomaly"><h2>关键异常信号（`+fmt.Sprint(len(r.Anomalies))+`）</h2>
 <table><thead><tr><th>类型</th><th>严重度</th><th>说明</th></tr></thead><tbody>`+anomRows.String()+`</tbody></table></div>
-<div class="panel"><h2>反复出现的关键问题</h2>
+<div class="panel"><h2>高频问题类型（category）</h2>
 `+kwTable(kwRows.String())+`
 </div>
 </div>
@@ -540,7 +514,7 @@ new Chart(document.getElementById('dayChart'),{type:'bar',data:{labels:dayNames,
 
 func kwTable(rows string) string {
 	if rows == "" {
-		return "<p>无明显高频关键词。</p>"
+		return "<p>无数据。</p>"
 	}
-	return "<table><thead><tr><th>关键词</th><th>出现次数</th></tr></thead><tbody>" + rows + "</tbody></table>"
+	return "<table><thead><tr><th>问题类型</th><th>出现次数</th><th>占比</th></tr></thead><tbody>" + rows + "</tbody></table>"
 }
