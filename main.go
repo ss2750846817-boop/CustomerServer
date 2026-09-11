@@ -239,30 +239,18 @@ func analyze(tickets []Ticket) *Report {
 		}
 	}
 
-	// 异常检测5：关键词反复出现
+	// 异常检测5：关键词反复出现（精确子串匹配，每个关键词统计"描述中包含该确切子串"的工单条数）
+	kwList := []string{"扣款", "支付", "退款", "退货运费", "物流", "重复", "机器人", "发货"}
 	kwMap := map[string]int{}
-	kwAlias := []struct{ key, name string }{
-		{"重复扣款", "重复扣款"},
-		{"扣款", "扣款/重复支付"},
-		{"支付", "支付问题"},
-		{"退款", "退款/退货"},
-		{"退货运费", "退货运费"},
-		{"物流", "物流"},
-		{"自动确认", "自动确认收货"},
-		{"机器人", "客服机器人"},
-		{"态度", "客服态度"},
-		{"冻结", "账号冻结"},
-	}
-	for _, t := range tickets {
-		low := t.Description
-		for _, kw := range kwAlias {
-			if strings.Contains(low, kw.key) {
-				kwMap[kw.name]++
+	for _, kw := range kwList {
+		for _, t := range tickets {
+			if strings.Contains(t.Description, kw) {
+				kwMap[kw]++
 			}
 		}
 	}
 	for k, v := range kwMap {
-		if v >= 3 {
+		if v >= 2 {
 			r.Keyword = append(r.Keyword, KeywordStat{Keyword: k, Count: v})
 		}
 	}
@@ -289,7 +277,6 @@ func analyze(tickets []Ticket) *Report {
 	// 排序异常按类型分组，输出时统一整理
 	r.OverallTopCategory = r.ByCategory[0].Category
 	r.OverallLowestSat = lowestSatCategory(r.ByCategory)
-	r.RepeatPaymentCount = kwMap["重复扣款"]
 
 	return r
 }
@@ -334,7 +321,6 @@ type Report struct {
 	CategoryPriority      map[string]map[string]int
 	OverallTopCategory    string
 	OverallLowestSat      string
-	RepeatPaymentCount    int
 }
 
 func printSectionHeader(w *bufio.Writer, s string) {
