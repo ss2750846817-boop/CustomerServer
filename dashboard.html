@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>客服工单趋势 Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+body{font-family:-apple-system,Segoe UI,Microsoft YaHei,sans-serif;margin:0;background:#f5f6fa;color:#222}
+header{background:linear-gradient(90deg,#2c3e50,#3498db);color:#fff;padding:24px 32px}
+header h1{margin:0;font-size:22px}header p{margin:6px 0 0;opacity:.85;font-size:13px}
+.wrap{max-width:1100px;margin:24px auto;padding:0 16px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin-bottom:24px}
+.card{background:#fff;border-radius:10px;padding:18px;box-shadow:0 1px 4px rgba(0,0,0,.08);text-align:center}
+.card .num{font-size:28px;font-weight:700;color:#2c3e50}
+.card .lbl{font-size:13px;color:#888;margin-top:6px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.panel{background:#fff;border-radius:10px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.08);margin-bottom:24px}
+.panel h2{margin:0 0 16px;font-size:16px;border-left:4px solid #3498db;padding-left:10px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:8px 10px;text-align:left;border-bottom:1px solid #eee}
+th{background:#f8f9fb;color:#555}
+.badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:12px}
+.anomaly table{border:0}
+.anomaly tr:nth-child(even){background:#fafbfd}
+canvas{max-height:300px}
+@media(max-width:800px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+<h1>客服工单趋势 Dashboard</h1>
+<p>数据范围：2024-06-01 ~ 2024-06-11 ｜ 共 50 条工单 ｜ 生成时间 2026-09-11 09:30</p>
+</header>
+<div class="wrap">
+<div class="cards">
+<div class="card"><div class="num">50</div><div class="lbl">工单总数</div></div>
+<div class="card"><div class="num">31</div><div class="lbl">高优先级</div></div>
+<div class="card"><div class="num">8</div><div class="lbl">未解决</div></div>
+<div class="card"><div class="num">19.7</div><div class="lbl">平均处理(h)</div></div>
+<div class="card"><div class="num">2.36</div><div class="lbl">平均满意度</div></div>
+</div>
+
+<div class="grid">
+<div class="panel"><h2>分类分布</h2><canvas id="catChart"></canvas></div>
+<div class="panel"><h2>每日工单趋势</h2><canvas id="dayChart"></canvas></div>
+</div>
+
+<div class="grid">
+<div class="panel anomaly"><h2>关键异常信号（12）</h2>
+<table><thead><tr><th>类型</th><th>严重度</th><th>说明</th></tr></thead><tbody><tr><td>增长趋势</td><td style='color:red;font-weight:bold'>高</td><td>「投诉」后半段 3 条 vs 前半段 1 条，增长 3 倍</td></tr><tr><td>增长趋势</td><td style='color:red;font-weight:bold'>高</td><td>「支付问题」后半段 13 条 vs 前半段 3 条，增长 4 倍</td></tr><tr><td>高危未解决</td><td style='color:red;font-weight:bold'>高</td><td>T019 高优先级未解决：物流查询（包裹被退回了 我没让退啊）</td></tr><tr><td>高危未解决</td><td style='color:red;font-weight:bold'>高</td><td>T031 高优先级未解决：退款退货（退货快递费我垫付了 说好了退给我 到现在没退）</td></tr><tr><td>高危未解决</td><td style='color:red;font-weight:bold'>高</td><td>T036 高优先级未解决：退款退货（七天无理由退货 你们不给退 凭什么）</td></tr><tr><td>高危未解决</td><td style='color:red;font-weight:bold'>高</td><td>T039 高优先级未解决：退款退货（商品还没收到就已经自动确认收货了 我要退款）</td></tr><tr><td>高危未解决</td><td style='color:red;font-weight:bold'>高</td><td>T042 高优先级未解决：退款退货（退货运费垫付了28块 你们说要报销的 什么时候给）</td></tr><tr><td>高危未解决</td><td style='color:red;font-weight:bold'>高</td><td>T046 高优先级未解决：支付问题（又出现重复扣款了 上个月也有过）</td></tr><tr><td>高危未解决</td><td style='color:red;font-weight:bold'>高</td><td>T047 高优先级未解决：退款退货（退了一个星期了 退款还在处理中 你们是不是不想退）</td></tr><tr><td>处理超时</td><td style='color:orange;font-weight:bold'>中</td><td>T007 退款退货 处理时长 96 小时</td></tr><tr><td>处理超时</td><td style='color:orange;font-weight:bold'>中</td><td>T031 退款退货 处理时长 120 小时</td></tr><tr><td>处理超时</td><td style='color:orange;font-weight:bold'>中</td><td>T047 退款退货 处理时长 96 小时</td></tr></tbody></table></div>
+<div class="panel"><h2>反复出现的关键问题</h2>
+<table><thead><tr><th>关键词</th><th>出现次数</th></tr></thead><tbody><tr><td>支付问题</td><td>6</td></tr><tr><td>退款/退货</td><td>5</td></tr><tr><td>扣款/重复支付</td><td>5</td></tr><tr><td>退货运费</td><td>3</td></tr></tbody></table>
+</div>
+</div>
+
+<div class="panel"><h2>分类明细</h2>
+<table><thead><tr><th>分类</th><th>数量</th><th>占比</th><th>高优先级</th><th>未解决</th><th>平均处理(h)</th><th>平均满意度</th><th>低满意(≤2)</th></tr></thead><tbody><tr><td>支付问题</td><td>16</td><td>32.0%</td><td>14</td><td>1</td><td>5.2</td><td>2.25</td><td>9</td></tr><tr><td>退款退货</td><td>13</td><td>26.0%</td><td>7</td><td>5</td><td>45.2</td><td>2.00</td><td>8</td></tr><tr><td>物流查询</td><td>8</td><td>16.0%</td><td>4</td><td>2</td><td>24.5</td><td>2.12</td><td>6</td></tr><tr><td>商品咨询</td><td>5</td><td>10.0%</td><td>0</td><td>0</td><td>0.9</td><td>4.20</td><td>0</td></tr><tr><td>账号问题</td><td>4</td><td>8.0%</td><td>3</td><td>0</td><td>5.0</td><td>3.50</td><td>0</td></tr><tr><td>投诉</td><td>4</td><td>8.0%</td><td>3</td><td>0</td><td>23.0</td><td>1.00</td><td>4</td></tr></tbody></table></div>
+</div>
+
+<script>
+const catNames=['支付问题','退款退货','物流查询','商品咨询','账号问题','投诉'];
+const catCounts=[16,13,8,5,4,4];
+new Chart(document.getElementById('catChart'),{type:'pie',data:{labels:catNames,datasets:[{data:catCounts,backgroundColor:['#3498db','#e74c3c','#2ecc71','#f1c40f','#9b59b6','#1abc9c','#e67e22']}]},options:{plugins:{legend:{position:'bottom'}}}});
+const dayNames=['06-01','06-02','06-03','06-04','06-05','06-06','06-07','06-08','06-09','06-10','06-11'];
+const dayCounts=[3,3,4,5,4,5,5,5,5,6,5];
+new Chart(document.getElementById('dayChart'),{type:'bar',data:{labels:dayNames,datasets:[{label:'工单数',data:dayCounts,backgroundColor:'#3498db'}]},options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}});
+</script>
+</body>
+</html>
